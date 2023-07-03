@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="https://api.mapy.cz/loader.js"></script>
+    <script>Loader.load(null, { pano: true })</script>
+
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"
+        integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="/style/main.css">
+    <link rel="stylesheet" href="/style/game.css">
+
+    <script src="/script/Game.js"></script>
+    <script src="/script/Map.js"></script>
+    <script src="/script/GLOBAL.js"></script>
+
+    <title>CzechGuessr - Game</title>
+</head>
+
+<body>
+    <div id="results">
+        <h1>Results:</h1>
+        <span id="avg-err"></span><br>
+        <span id="total-err"></span>
+    </div>
+    <div id="pano"></div>
+    <div id="btn" onclick="CzechGuessr.Game.Button.onBtnClick()" onmouseenter="CzechGuessr.Game.Button.onBtnHover()">
+        <i class=" bi bi-map"></i>
+    </div>
+    <div id="map" onmouseleave="CzechGuessr.Game.Button.onMapHoverOut()"></div>
+    <script type="module">
+        await CzechGuessr.Game.load();
+    </script>
+</body>
+
+</html>
