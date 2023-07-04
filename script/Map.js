@@ -39,7 +39,7 @@ var CzechGuessr;
 (function (CzechGuessr) {
     var CGMap;
     (function (CGMap) {
-        var build_path = function () {
+        function build_path() {
             var args = [];
             for (var _i = 0; _i < arguments.length; _i++) {
                 args[_i] = arguments[_i];
@@ -52,7 +52,7 @@ var CzechGuessr;
                     return part.trim().replace(/(^[\/]*|[\/]*$)/g, '');
                 }
             }).filter(function (x) { return x.length; }).join('/');
-        };
+        }
         var Config = /** @class */ (function () {
             function Config(obj) {
                 if (obj === void 0) { obj = {}; }
@@ -101,7 +101,7 @@ var CzechGuessr;
                 this.locations = [];
                 this.usable = [];
                 this.path = "";
-                this.center = SMap.Coords.fromWGS84(0, 0);
+                this.center = [0, 0];
                 this.centerZoom = 13;
                 Object.assign(this, obj);
                 this.usable = Object.assign([], this.locations);
@@ -121,7 +121,7 @@ var CzechGuessr;
                                     throw new Error("File version incorrect: ".concat(url, " has version ").concat(json.version, ", but the current FILE_VERSION is ").concat(CzechGuessr.GLOBAL.FILE_VERSION));
                                 map.name = json.name;
                                 map.author = json.author;
-                                map.center = SMap.Coords.fromWGS84(json.center[1], json.center[0]);
+                                map.center = [json.center[0], json.center[1]];
                                 map.centerZoom = json.center[2];
                                 json.locations.forEach(function (loc) {
                                     map.locations.push({ lat: loc[0], lon: loc[1] });

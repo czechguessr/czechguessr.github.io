@@ -45,3 +45,9 @@ body {
     text-align: center;
     width: 100%;
 }
+
+#end {
+    position: absolute;
+    right: 5px;
+    top: 0;
+}

@@ -1,5 +1,5 @@
 namespace CzechGuessr.CGMap {
-    let build_path = (...args: string[]) => {
+    function build_path(...args: string[]) {
         return args.map((part: string, i: number) => {
             if (i === 0) {
                 return part.trim().replace(/[\/]*$/g, '')
@@ -34,7 +34,7 @@ namespace CzechGuessr.CGMap {
         public locations: Location[] = [];
         public usable: Location[] = [];
         public path: string = "";
-        public center: SMap.Coords = SMap.Coords.fromWGS84(0, 0);
+        public center: L.LatLngExpression = [0, 0];
         public centerZoom: number = 13;
 
         public static async fromUrl(url: string) {
@@ -44,7 +44,7 @@ namespace CzechGuessr.CGMap {
             if (json.version !== GLOBAL.FILE_VERSION) throw new Error(`File version incorrect: ${url} has version ${json.version}, but the current FILE_VERSION is ${GLOBAL.FILE_VERSION}`)
             map.name = json.name;
             map.author = json.author;
-            map.center = SMap.Coords.fromWGS84(json.center[1], json.center[0]);
+            map.center = [json.center[0], json.center[1]];
             map.centerZoom = json.center[2];
             json.locations.forEach((loc: any) => {
                 map.locations.push({ lat: loc[0], lon: loc[1] });

@@ -39,7 +39,6 @@ var CzechGuessr;
 (function (CzechGuessr) {
     var SelectMap;
     (function (SelectMap) {
-        var _this = this;
         var wrongPaths = [];
         var okPaths = new Map();
         var maps = new Map();
@@ -50,16 +49,17 @@ var CzechGuessr;
         var STATUS_ERROR = '<i class="bi bi-x-circle-fill"></i>&nbsp;Not found';
         var STATUS_OK = '<i class="bi bi-check-circle-fill"></i>&nbsp;OK';
         var PLAY_BUTTON;
-        SelectMap.bodyOnLoad = function () {
+        function bodyOnLoad() {
             FOLDER_PATH = $('#folder-path');
             MAP_SELECT = $('#map');
             PLAY_BUTTON = $('#play-form-btn');
             STATUS = $("#folder-state");
             if (typeof FOLDER_PATH !== "object" || typeof MAP_SELECT !== "object" || typeof PLAY_BUTTON !== "object")
                 return;
-            SelectMap.check();
-        };
-        var showMaps = function (CGConf) {
+            check();
+        }
+        SelectMap.bodyOnLoad = bodyOnLoad;
+        function showMaps(CGConf) {
             maps = new Map();
             STATUS.html(STATUS_OK);
             STATUS.removeClass("text-danger");
@@ -70,52 +70,57 @@ var CzechGuessr;
                 maps.set(map.path, map);
                 MAP_SELECT.append("<option value=\"".concat(map.path, "\">").concat(map.name, " by ").concat(map.author, "</option>"));
             });
-        };
-        var wrongPath = function (path) {
+        }
+        function wrongPath(path) {
             wrongPaths.push(path);
             STATUS.html(STATUS_ERROR);
             STATUS.removeClass("text-success");
             STATUS.addClass("text-danger");
             MAP_SELECT.attr("disabled", "true");
             PLAY_BUTTON.attr("disabled", "true");
-        };
-        SelectMap.check = function () { return __awaiter(_this, void 0, void 0, function () {
-            var root, config, _a;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        MAP_SELECT.html(MAP_SELECT_DEFAULT);
-                        root = FOLDER_PATH.val();
-                        if (typeof root !== "string")
-                            return [2 /*return*/];
-                        if (wrongPaths.indexOf(root) !== -1)
-                            return [2 /*return*/];
-                        if (okPaths.has(root)) {
-                            showMaps(okPaths.get(root));
-                            return [2 /*return*/];
-                        }
-                        _b.label = 1;
-                    case 1:
-                        _b.trys.push([1, 3, , 4]);
-                        return [4 /*yield*/, CzechGuessr.CGMap.Config.fromDir(root)];
-                    case 2:
-                        config = _b.sent();
-                        if (config.maps.length === 0) {
+        }
+        function check() {
+            return __awaiter(this, void 0, void 0, function () {
+                var root, config, e_1;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            MAP_SELECT.html(MAP_SELECT_DEFAULT);
+                            root = FOLDER_PATH.val();
+                            if (typeof root !== "string")
+                                return [2 /*return*/];
+                            if (wrongPaths.indexOf(root) !== -1)
+                                return [2 /*return*/];
+                            if (okPaths.has(root)) {
+                                showMaps(okPaths.get(root));
+                                return [2 /*return*/];
+                            }
+                            _a.label = 1;
+                        case 1:
+                            _a.trys.push([1, 3, , 4]);
+                            return [4 /*yield*/, CzechGuessr.CGMap.Config.fromDir(root)];
+                        case 2:
+                            config = _a.sent();
+                            if (config.maps.length === 0) {
+                                console.log("no maps");
+                                wrongPath(root);
+                                return [2 /*return*/];
+                            }
+                            okPaths.set(root, Object.assign({}, config));
+                            showMaps(config);
+                            return [3 /*break*/, 4];
+                        case 3:
+                            e_1 = _a.sent();
                             wrongPath(root);
-                            return [2 /*return*/];
-                        }
-                        okPaths.set(root, Object.assign({}, config));
-                        showMaps(config);
-                        return [3 /*break*/, 4];
-                    case 3:
-                        _a = _b.sent();
-                        wrongPath(root);
-                        return [3 /*break*/, 4];
-                    case 4: return [2 /*return*/];
-                }
+                            console.log(e_1);
+                            return [3 /*break*/, 4];
+                        case 4: return [2 /*return*/];
+                    }
+                });
             });
-        }); };
-        SelectMap.ok = function () {
+        }
+        SelectMap.check = check;
+        function ok() {
             var mapPath = MAP_SELECT.val();
             if (typeof mapPath !== "string")
                 return;
@@ -124,6 +129,7 @@ var CzechGuessr;
                 return;
             localStorage.setItem(CzechGuessr.GLOBAL.MAP_KEY, mapPath);
             window.location.href = "/game";
-        };
+        }
+        SelectMap.ok = ok;
     })(SelectMap = CzechGuessr.SelectMap || (CzechGuessr.SelectMap = {}));
 })(CzechGuessr || (CzechGuessr = {}));

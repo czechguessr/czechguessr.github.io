@@ -39,102 +39,156 @@ var CzechGuessr;
 (function (CzechGuessr) {
     var Game;
     (function (Game) {
-        var _this = this;
         var PANO;
         var CGMAP;
         var MAP;
-        var SMAP;
+        var LMAP;
         var MARKER;
-        var M_LAYER;
+        var TMARKER;
+        var TARGET;
         var currentLocation;
         var errors = [];
-        Game.load = function () { return __awaiter(_this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        $("#results").hide();
-                        return [4 /*yield*/, CzechGuessr.CGMap.Map.fromUrl(localStorage.getItem(CzechGuessr.GLOBAL.MAP_KEY))];
-                    case 1:
-                        CGMAP = _a.sent();
-                        MAP = $("#map");
-                        MAP.hide();
-                        PANO = new SMap.Pano.Scene($("#pano")[0]);
-                        M_LAYER = new SMap.Layer.Marker();
-                        MARKER = new SMap.Marker(CGMAP.center, "CGMarker");
-                        //@ts-expect-error
-                        MARKER.decorate(SMap.Marker.Feature.Draggable);
-                        M_LAYER.addMarker(MARKER);
-                        Game.next();
-                        return [2 /*return*/];
-                }
+        var greenIcon = new L.Icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+        function load() {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            $("#results").hide();
+                            return [4 /*yield*/, CzechGuessr.CGMap.Map.fromUrl(localStorage.getItem(CzechGuessr.GLOBAL.MAP_KEY))];
+                        case 1:
+                            CGMAP = _a.sent();
+                            MAP = $("#map");
+                            MAP.hide();
+                            PANO = new SMap.Pano.Scene($("#pano")[0]);
+                            MARKER = L.marker(CGMAP.center);
+                            TMARKER = L.marker(CGMAP.center, { icon: greenIcon });
+                            next();
+                            return [2 /*return*/];
+                    }
+                });
             });
-        }); };
-        var loadLocation = function (loc) {
-            //@ts-expect-error
+        }
+        Game.load = load;
+        function loadLocation(loc) {
             SMap.Pano.getBest(CzechGuessr.CGMap.Location.toSeznamLocation(loc)).then(function (place) {
                 PANO.show(place, { yaw: 1.8 * Math.PI });
             });
-        };
-        Game.update = function () {
+        }
+        function update() {
             loadLocation(currentLocation);
-        };
-        var end = function () {
+        }
+        Game.update = update;
+        function end() {
             MAP.hide();
+            $("#end").hide();
             $("#pano").hide();
             $("#btn").hide();
             var sum = Math.round((errors.reduce(function (a, b) { return a + b; })) * 10) / 10;
             var mean = Math.round((sum / errors.length) * 10) / 10;
             $("#avg-err").text("Avg. error: ".concat(mean > 1000 ? Math.round(mean / 10) / 100 : mean, " ").concat(mean > 1000 ? "km" : "m"));
             $("#total-err").text("Total error: ".concat(sum > 1000 ? Math.round(sum / 10) / 100 : sum, "  ").concat(sum > 1000 ? "km" : "m"));
+            $("#round-count").text("Rounds played: ".concat(errors.length));
             $("#results").show();
-        };
-        Game.next = function () {
-            MARKER.setCoords(CGMAP.center);
+        }
+        Game.end = end;
+        function next() {
+            MARKER.setLatLng(CGMAP.center);
             if (CGMAP.usable.length == 0) {
                 end();
                 return;
             }
             var random = CGMAP.randomLocation();
             currentLocation = random == null ? currentLocation : random;
-            Game.update();
-        };
-        var Button;
-        (function (Button) {
+            update();
+        }
+        Game.next = next;
+        var Events;
+        (function (Events) {
             var BtnStates;
             (function (BtnStates) {
                 BtnStates[BtnStates["closed"] = 0] = "closed";
                 BtnStates[BtnStates["map"] = 1] = "map";
+                BtnStates[BtnStates["waitForNext"] = 2] = "waitForNext";
             })(BtnStates || (BtnStates = {}));
             ;
+            var MarkerStates;
+            (function (MarkerStates) {
+                MarkerStates[MarkerStates["hidden"] = 0] = "hidden";
+                MarkerStates[MarkerStates["shown"] = 1] = "shown";
+            })(MarkerStates || (MarkerStates = {}));
+            ;
             var btnState = BtnStates.closed;
-            Button.onBtnClick = function () {
+            var markerState = MarkerStates.hidden;
+            function onMapClick(e) {
+                if (markerState === MarkerStates.hidden) {
+                    MARKER.addTo(LMAP);
+                    markerState = MarkerStates.shown;
+                }
+                MARKER.setLatLng(e.latlng);
+            }
+            Events.onMapClick = onMapClick;
+            function onBtnClick() {
                 if (btnState === BtnStates.map) {
-                    var dist = Math.round(MARKER.getCoords().distance(SMap.Coords.fromWGS84(currentLocation.lon, currentLocation.lat), 430) * 10) / 10;
+                    var dist = Math.round(SMap.Coords.fromWGS84(MARKER.getLatLng().lng, MARKER.getLatLng().lat).distance(SMap.Coords.fromWGS84(currentLocation.lon, currentLocation.lat)) * 10) / 10;
+                    LMAP.removeEventListener('click');
                     errors.push(dist);
                     alert("Error is ".concat(dist > 1000 ? Math.round(dist / 10) / 100 : dist, " ").concat(dist > 1000 ? "km" : "m"));
-                    Game.next();
+                    var points = [[currentLocation.lat, currentLocation.lon], MARKER.getLatLng()];
+                    TMARKER.setLatLng(points[0]);
+                    TMARKER.addTo(LMAP);
+                    if (TARGET === undefined)
+                        TARGET = L.polyline(points);
+                    else
+                        TARGET.setLatLngs(points);
+                    TARGET.addTo(LMAP);
+                    $("#btn").html("<i class=\"bi bi-arrow-right-circle-fill\"></i>");
+                    btnState = BtnStates.waitForNext;
                 }
-            };
-            Button.onBtnHover = function () {
-                if (btnState === BtnStates.closed) {
-                    MAP.show();
-                    $("#btn").html("<i class=\"bi bi-geo-alt\"></i>");
-                    if (SMAP == undefined) {
-                        SMAP = new SMap(MAP[0], CGMAP.center, CGMAP.centerZoom);
-                        SMAP.addDefaultLayer(SMap.DEF_BASE).enable();
-                        SMAP.addDefaultControls();
-                        SMAP.addLayer(M_LAYER).enable();
-                    }
+                else if (btnState === BtnStates.waitForNext) {
+                    TARGET.remove();
+                    MARKER.remove();
+                    TMARKER.remove();
+                    markerState = MarkerStates.hidden;
+                    LMAP.on('click', Events.onMapClick);
+                    $("#btn").html("<i class=\"bi bi-map\"></i>");
+                    LMAP.setView(CGMAP.center, CGMAP.centerZoom);
+                    next();
                     btnState = BtnStates.map;
                 }
-            };
-            Button.onMapHoverOut = function () {
+            }
+            Events.onBtnClick = onBtnClick;
+            function onBtnHover() {
+                if (btnState === BtnStates.closed) {
+                    MAP.show();
+                    if (LMAP === undefined) {
+                        LMAP = L.map(MAP[0]).setView(CGMAP.center, CGMAP.centerZoom);
+                        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            maxZoom: 19,
+                            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                        }).addTo(LMAP);
+                        LMAP.on('click', Events.onMapClick);
+                    }
+                    $("#btn").html("<i class=\"bi bi-geo-alt\"></i>");
+                    btnState = BtnStates.map;
+                }
+            }
+            Events.onBtnHover = onBtnHover;
+            function onMapHoverOut() {
                 if (btnState === BtnStates.map) {
                     MAP.hide();
                     $("#btn").html("<i class=\"bi bi-map\"></i>");
                     btnState = BtnStates.closed;
                 }
-            };
-        })(Button = Game.Button || (Game.Button = {}));
+            }
+            Events.onMapHoverOut = onMapHoverOut;
+        })(Events = Game.Events || (Game.Events = {}));
     })(Game = CzechGuessr.Game || (CzechGuessr.Game = {}));
 })(CzechGuessr || (CzechGuessr = {}));

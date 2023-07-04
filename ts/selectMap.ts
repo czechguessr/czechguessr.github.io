@@ -14,7 +14,7 @@ namespace CzechGuessr.SelectMap {
 
     let PLAY_BUTTON: JQuery<HTMLElement>;
 
-    export let bodyOnLoad = () => {
+    export function bodyOnLoad() {
         FOLDER_PATH = $('#folder-path');
         MAP_SELECT = $('#map');
         PLAY_BUTTON = $('#play-form-btn');
@@ -23,7 +23,7 @@ namespace CzechGuessr.SelectMap {
         check();
     }
 
-    let showMaps = (CGConf: CGMap.Config) => {
+    function showMaps(CGConf: CGMap.Config) {
         maps = new Map<string, CGMap.Map>();
         STATUS.html(STATUS_OK);
         STATUS.removeClass("text-danger");
@@ -36,7 +36,7 @@ namespace CzechGuessr.SelectMap {
         });
     }
 
-    let wrongPath = (path: string) => {
+    function wrongPath(path: string) {
         wrongPaths.push(path);
         STATUS.html(STATUS_ERROR);
         STATUS.removeClass("text-success");
@@ -45,11 +45,12 @@ namespace CzechGuessr.SelectMap {
         PLAY_BUTTON.attr("disabled", "true");
     }
 
-    export let check = async () => {
+    export async function check() {
         MAP_SELECT.html(MAP_SELECT_DEFAULT);
         let root = FOLDER_PATH.val();
         if (typeof root !== "string") return;
-        if (wrongPaths.indexOf(root) !== -1) return;
+        if (wrongPaths.indexOf(root) !== -1)
+            return;
         if (okPaths.has(root)) {
             showMaps(okPaths.get(root) as CGMap.Config);
             return;
@@ -58,6 +59,8 @@ namespace CzechGuessr.SelectMap {
             let config = await CGMap.Config.fromDir(root);
 
             if (config.maps.length === 0) {
+                console.log("no maps");
+
                 wrongPath(root);
                 return;
             }
@@ -65,10 +68,13 @@ namespace CzechGuessr.SelectMap {
             okPaths.set(root, Object.assign({}, config) as CGMap.Config);
 
             showMaps(config);
-        } catch { wrongPath(root); }
+        } catch (e) {
+            wrongPath(root);
+            console.log(e);
+        }
     }
 
-    export let ok = () => {
+    export function ok() {
         let mapPath = MAP_SELECT.val();
         if (typeof mapPath !== "string") return;
 

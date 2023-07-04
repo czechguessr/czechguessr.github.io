@@ -9,8 +9,13 @@
     <script src="https://api.mapy.cz/loader.js"></script>
     <script>Loader.load(null, { pano: true })</script>
 
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"
         integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
     <link rel="stylesheet" href="/style/main.css">
     <link rel="stylesheet" href="/style/game.css">
@@ -26,13 +31,17 @@
     <div id="results">
         <h1>Results:</h1>
         <span id="avg-err"></span><br>
-        <span id="total-err"></span>
+        <span id="total-err"></span><br>
+        <span id="round-count"></span>
     </div>
     <div id="pano"></div>
-    <div id="btn" onclick="CzechGuessr.Game.Button.onBtnClick()" onmouseenter="CzechGuessr.Game.Button.onBtnHover()">
+    <div id="btn" onclick="CzechGuessr.Game.Events.onBtnClick()" onmouseenter="CzechGuessr.Game.Events.onBtnHover()">
         <i class=" bi bi-map"></i>
     </div>
-    <div id="map" onmouseleave="CzechGuessr.Game.Button.onMapHoverOut()"></div>
+    <div id="end" onclick="CzechGuessr.Game.end()">
+        <i class="bi bi-x-square-fill text-danger"></i>
+    </div>
+    <div id="map" onmouseleave="CzechGuessr.Game.Events.onMapHoverOut()"></div>
     <script type="module">
         await CzechGuessr.Game.load();
     </script>
