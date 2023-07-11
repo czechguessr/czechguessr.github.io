@@ -6,6 +6,7 @@ namespace CzechGuessr.Game {
     let MARKER: L.Marker;
     let TMARKER: L.Marker;
     let TARGET: L.Polyline;
+    let DIST_POPUP: L.Popup;
     let currentLocation: CGMap.Location;
     let errors: number[] = [];
     let greenIcon = new L.Icon({
@@ -20,7 +21,7 @@ namespace CzechGuessr.Game {
     export async function load() {
         $("#results").hide();
         CGMAP = await CGMap.Map.fromUrl(localStorage.getItem(GLOBAL.MAP_KEY) as string);
-        MAP = $("#map");
+        MAP = $("#mapContainer");
         MAP.hide();
         PANO = new SMap.Pano.Scene($("#pano")[0])
         MARKER = L.marker(CGMAP.center);
@@ -62,17 +63,23 @@ namespace CzechGuessr.Game {
         update();
     }
     export namespace Events {
+        const TIMEOUT = 100;
         enum BtnStates {
             closed,
             map,
             waitForNext,
+            none
         };
         enum MarkerStates {
             hidden,
             shown,
         };
+        enum Modes {
+            PC, mobile
+        }
         let btnState: BtnStates = BtnStates.closed;
         let markerState: MarkerStates = MarkerStates.hidden;
+        let mode: Modes = Modes.PC;
 
         export function onMapClick(e: L.LeafletMouseEvent) {
             if (markerState === MarkerStates.hidden) {
@@ -83,11 +90,15 @@ namespace CzechGuessr.Game {
         }
 
         export function onBtnClick() {
+            onBtnHover(true);
             if (btnState === BtnStates.map) {
                 let dist = Math.round(SMap.Coords.fromWGS84(MARKER.getLatLng().lng, MARKER.getLatLng().lat).distance(SMap.Coords.fromWGS84(currentLocation.lon, currentLocation.lat)) * 10) / 10;
                 LMAP.removeEventListener('click');
                 errors.push(dist);
-                alert(`Error is ${dist > 1000 ? Math.round(dist / 10) / 100 : dist} ${dist > 1000 ? "km" : "m"}`);
+                DIST_POPUP = L.popup({ closeButton: false, closeOnClick: false, closeOnEscapeKey: false, autoClose: false })
+                    .setLatLng([(MARKER.getLatLng().lat + currentLocation.lat) / 2, (MARKER.getLatLng().lng + currentLocation.lon) / 2])
+                    .setContent(`${dist > 1000 ? Math.round(dist / 10) / 100 : dist} ${dist > 1000 ? "km" : "m"}`)
+                    .openOn(LMAP);
                 let points: L.LatLngExpression[] = [[currentLocation.lat, currentLocation.lon], MARKER.getLatLng()];
                 TMARKER.setLatLng(points[0]);
                 TMARKER.addTo(LMAP);
@@ -97,22 +108,46 @@ namespace CzechGuessr.Game {
                     TARGET.setLatLngs(points);
                 TARGET.addTo(LMAP);
                 $("#btn").html("<i class=\"bi bi-arrow-right-circle-fill\"></i>");
-                btnState = BtnStates.waitForNext;
+                LMAP.fitBounds(L.latLngBounds([MARKER.getLatLng(), [currentLocation.lat, currentLocation.lon]]).pad(0.25));
+                if (mode === Modes.mobile) {
+                    btnState = BtnStates.none;
+                    setTimeout(() => {
+                        btnState = BtnStates.waitForNext;
+                    }, TIMEOUT);
+                } else {
+                    btnState = BtnStates.waitForNext;
+                }
             } else if (btnState === BtnStates.waitForNext) {
                 TARGET.remove();
                 MARKER.remove();
                 TMARKER.remove();
+                DIST_POPUP.remove()
                 markerState = MarkerStates.hidden;
                 LMAP.on('click', Events.onMapClick);
                 $("#btn").html("<i class=\"bi bi-map\"></i>");
                 LMAP.setView(CGMAP.center, CGMAP.centerZoom);
                 next();
-                btnState = BtnStates.map;
+                if (mode === Modes.mobile) {
+                    btnState = BtnStates.none;
+                    setTimeout(() => {
+                        btnState = BtnStates.map;
+                        onMapHoverOut(true);
+                    }, TIMEOUT);
+                } else {
+                    btnState = BtnStates.map;
+                    onMapHoverOut(true);
+                }
             }
         }
-
-        export function onBtnHover() {
+        let calledInLastSeconds = false;
+        export function onBtnHover(fromClick = false) {
+            if (calledInLastSeconds && fromClick) {
+                mode = Modes.mobile;
+            } else {
+                mode = Modes.PC;
+            }
             if (btnState === BtnStates.closed) {
+                calledInLastSeconds = true;
                 MAP.show();
                 if (LMAP === undefined) {
                     LMAP = L.map(MAP[0]).setView(CGMAP.center, CGMAP.centerZoom);
@@ -123,15 +158,33 @@ namespace CzechGuessr.Game {
                     LMAP.on('click', Events.onMapClick);
                 }
                 $("#btn").html("<i class=\"bi bi-geo-alt\"></i>");
-                btnState = BtnStates.map;
+                if (mode === Modes.mobile) {
+                    btnState = BtnStates.none;
+                    setTimeout(() => {
+                        btnState = BtnStates.map;
+                        calledInLastSeconds = false;
+                    }, TIMEOUT);
+                } else {
+                    btnState = BtnStates.map;
+                    setTimeout(() => {
+                        calledInLastSeconds = false;
+                    }, TIMEOUT);
+                }
             }
         }
 
-        export function onMapHoverOut() {
-            if (btnState === BtnStates.map) {
+        export function onMapHoverOut(force = false) {
+            if (btnState === BtnStates.map && (mode === Modes.PC || force)) {
                 MAP.hide();
                 $("#btn").html("<i class=\"bi bi-map\"></i>");
-                btnState = BtnStates.closed;
+                if (mode === Modes.mobile) {
+                    btnState = BtnStates.none;
+                    setTimeout(() => {
+                        btnState = BtnStates.closed;
+                    }, TIMEOUT);
+                } else {
+                    btnState = BtnStates.closed;
+                }
             }
         }
     }

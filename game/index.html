@@ -34,14 +34,17 @@
         <span id="total-err"></span><br>
         <span id="round-count"></span>
     </div>
-    <div id="pano"></div>
-    <div id="btn" onclick="CzechGuessr.Game.Events.onBtnClick()" onmouseenter="CzechGuessr.Game.Events.onBtnHover()">
-        <i class=" bi bi-map"></i>
-    </div>
+    <div id="pano" onclick="CzechGuessr.Game.Events.onMapHoverOut();"></div>
     <div id="end" onclick="CzechGuessr.Game.end()">
         <i class="bi bi-x-square-fill text-danger"></i>
     </div>
-    <div id="map" onmouseleave="CzechGuessr.Game.Events.onMapHoverOut()"></div>
+    <div id="map" onmouseleave="CzechGuessr.Game.Events.onMapHoverOut();">
+        <div id="btn" onclick="CzechGuessr.Game.Events.onBtnClick()"
+            onmouseenter="CzechGuessr.Game.Events.onBtnHover()">
+            <i class=" bi bi-map"></i>
+        </div>
+        <div id="mapContainer"></div>
+    </div>
     <script type="module">
         await CzechGuessr.Game.load();
     </script>

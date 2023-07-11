@@ -46,6 +46,7 @@ var CzechGuessr;
         var MARKER;
         var TMARKER;
         var TARGET;
+        var DIST_POPUP;
         var currentLocation;
         var errors = [];
         var greenIcon = new L.Icon({
@@ -65,7 +66,7 @@ var CzechGuessr;
                             return [4 /*yield*/, CzechGuessr.CGMap.Map.fromUrl(localStorage.getItem(CzechGuessr.GLOBAL.MAP_KEY))];
                         case 1:
                             CGMAP = _a.sent();
-                            MAP = $("#map");
+                            MAP = $("#mapContainer");
                             MAP.hide();
                             PANO = new SMap.Pano.Scene($("#pano")[0]);
                             MARKER = L.marker(CGMAP.center);
@@ -112,11 +113,13 @@ var CzechGuessr;
         Game.next = next;
         var Events;
         (function (Events) {
+            var TIMEOUT = 100;
             var BtnStates;
             (function (BtnStates) {
                 BtnStates[BtnStates["closed"] = 0] = "closed";
                 BtnStates[BtnStates["map"] = 1] = "map";
                 BtnStates[BtnStates["waitForNext"] = 2] = "waitForNext";
+                BtnStates[BtnStates["none"] = 3] = "none";
             })(BtnStates || (BtnStates = {}));
             ;
             var MarkerStates;
@@ -125,8 +128,14 @@ var CzechGuessr;
                 MarkerStates[MarkerStates["shown"] = 1] = "shown";
             })(MarkerStates || (MarkerStates = {}));
             ;
+            var Modes;
+            (function (Modes) {
+                Modes[Modes["PC"] = 0] = "PC";
+                Modes[Modes["mobile"] = 1] = "mobile";
+            })(Modes || (Modes = {}));
             var btnState = BtnStates.closed;
             var markerState = MarkerStates.hidden;
+            var mode = Modes.PC;
             function onMapClick(e) {
                 if (markerState === MarkerStates.hidden) {
                     MARKER.addTo(LMAP);
@@ -136,11 +145,15 @@ var CzechGuessr;
             }
             Events.onMapClick = onMapClick;
             function onBtnClick() {
+                onBtnHover(true);
                 if (btnState === BtnStates.map) {
                     var dist = Math.round(SMap.Coords.fromWGS84(MARKER.getLatLng().lng, MARKER.getLatLng().lat).distance(SMap.Coords.fromWGS84(currentLocation.lon, currentLocation.lat)) * 10) / 10;
                     LMAP.removeEventListener('click');
                     errors.push(dist);
-                    alert("Error is ".concat(dist > 1000 ? Math.round(dist / 10) / 100 : dist, " ").concat(dist > 1000 ? "km" : "m"));
+                    DIST_POPUP = L.popup({ closeButton: false, closeOnClick: false, closeOnEscapeKey: false, autoClose: false })
+                        .setLatLng([(MARKER.getLatLng().lat + currentLocation.lat) / 2, (MARKER.getLatLng().lng + currentLocation.lon) / 2])
+                        .setContent("".concat(dist > 1000 ? Math.round(dist / 10) / 100 : dist, " ").concat(dist > 1000 ? "km" : "m"))
+                        .openOn(LMAP);
                     var points = [[currentLocation.lat, currentLocation.lon], MARKER.getLatLng()];
                     TMARKER.setLatLng(points[0]);
                     TMARKER.addTo(LMAP);
@@ -150,23 +163,52 @@ var CzechGuessr;
                         TARGET.setLatLngs(points);
                     TARGET.addTo(LMAP);
                     $("#btn").html("<i class=\"bi bi-arrow-right-circle-fill\"></i>");
-                    btnState = BtnStates.waitForNext;
+                    LMAP.fitBounds(L.latLngBounds([MARKER.getLatLng(), [currentLocation.lat, currentLocation.lon]]).pad(0.25));
+                    if (mode === Modes.mobile) {
+                        btnState = BtnStates.none;
+                        setTimeout(function () {
+                            btnState = BtnStates.waitForNext;
+                        }, TIMEOUT);
+                    }
+                    else {
+                        btnState = BtnStates.waitForNext;
+                    }
                 }
                 else if (btnState === BtnStates.waitForNext) {
                     TARGET.remove();
                     MARKER.remove();
                     TMARKER.remove();
+                    DIST_POPUP.remove();
                     markerState = MarkerStates.hidden;
                     LMAP.on('click', Events.onMapClick);
                     $("#btn").html("<i class=\"bi bi-map\"></i>");
                     LMAP.setView(CGMAP.center, CGMAP.centerZoom);
                     next();
-                    btnState = BtnStates.map;
+                    if (mode === Modes.mobile) {
+                        btnState = BtnStates.none;
+                        setTimeout(function () {
+                            btnState = BtnStates.map;
+                            onMapHoverOut(true);
+                        }, TIMEOUT);
+                    }
+                    else {
+                        btnState = BtnStates.map;
+                        onMapHoverOut(true);
+                    }
                 }
             }
             Events.onBtnClick = onBtnClick;
-            function onBtnHover() {
+            var calledInLastSeconds = false;
+            function onBtnHover(fromClick) {
+                if (fromClick === void 0) { fromClick = false; }
+                if (calledInLastSeconds && fromClick) {
+                    mode = Modes.mobile;
+                }
+                else {
+                    mode = Modes.PC;
+                }
                 if (btnState === BtnStates.closed) {
+                    calledInLastSeconds = true;
                     MAP.show();
                     if (LMAP === undefined) {
                         LMAP = L.map(MAP[0]).setView(CGMAP.center, CGMAP.centerZoom);
@@ -177,15 +219,36 @@ var CzechGuessr;
                         LMAP.on('click', Events.onMapClick);
                     }
                     $("#btn").html("<i class=\"bi bi-geo-alt\"></i>");
-                    btnState = BtnStates.map;
+                    if (mode === Modes.mobile) {
+                        btnState = BtnStates.none;
+                        setTimeout(function () {
+                            btnState = BtnStates.map;
+                            calledInLastSeconds = false;
+                        }, TIMEOUT);
+                    }
+                    else {
+                        btnState = BtnStates.map;
+                        setTimeout(function () {
+                            calledInLastSeconds = false;
+                        }, TIMEOUT);
+                    }
                 }
             }
             Events.onBtnHover = onBtnHover;
-            function onMapHoverOut() {
-                if (btnState === BtnStates.map) {
+            function onMapHoverOut(force) {
+                if (force === void 0) { force = false; }
+                if (btnState === BtnStates.map && (mode === Modes.PC || force)) {
                     MAP.hide();
                     $("#btn").html("<i class=\"bi bi-map\"></i>");
-                    btnState = BtnStates.closed;
+                    if (mode === Modes.mobile) {
+                        btnState = BtnStates.none;
+                        setTimeout(function () {
+                            btnState = BtnStates.closed;
+                        }, TIMEOUT);
+                    }
+                    else {
+                        btnState = BtnStates.closed;
+                    }
                 }
             }
             Events.onMapHoverOut = onMapHoverOut;
