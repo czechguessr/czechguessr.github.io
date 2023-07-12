@@ -54,13 +54,6 @@ body {
     z-index: 0;
 }
 
-@media all and (max-width: 1000px) and (orientation:landscape) {
-    #map:hover {
-        width: 80%;
-        height: 80%;
-    }
-}
-
 #results {
     text-align: center;
     width: 100%;

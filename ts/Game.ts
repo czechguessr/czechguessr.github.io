@@ -79,7 +79,9 @@ namespace CzechGuessr.Game {
         }
         let btnState: BtnStates = BtnStates.closed;
         let markerState: MarkerStates = MarkerStates.hidden;
-        let mode: Modes = Modes.PC;
+        let mode: Modes;
+        if (typeof screen.orientation === 'undefined') mode = Modes.PC;
+        else mode = Modes.mobile;
 
         export function onMapClick(e: L.LeafletMouseEvent) {
             if (markerState === MarkerStates.hidden) {
@@ -90,7 +92,7 @@ namespace CzechGuessr.Game {
         }
 
         export function onBtnClick() {
-            onBtnHover(true);
+            onBtnHover();
             if (btnState === BtnStates.map) {
                 let dist = Math.round(SMap.Coords.fromWGS84(MARKER.getLatLng().lng, MARKER.getLatLng().lat).distance(SMap.Coords.fromWGS84(currentLocation.lon, currentLocation.lat)) * 10) / 10;
                 LMAP.removeEventListener('click');
@@ -139,16 +141,13 @@ namespace CzechGuessr.Game {
                 }
             }
         }
-        let calledInLastSeconds = false;
-        export function onBtnHover(fromClick = false) {
-            if (calledInLastSeconds && fromClick) {
-                mode = Modes.mobile;
-            } else {
-                mode = Modes.PC;
-            }
+        export function onBtnHover() {
             if (btnState === BtnStates.closed) {
-                calledInLastSeconds = true;
                 MAP.show();
+                if (mode === Modes.mobile) {
+                    $("#map").width("80%");
+                    $("#map").height("80%");
+                }
                 if (LMAP === undefined) {
                     LMAP = L.map(MAP[0]).setView(CGMAP.center, CGMAP.centerZoom);
                     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -162,13 +161,9 @@ namespace CzechGuessr.Game {
                     btnState = BtnStates.none;
                     setTimeout(() => {
                         btnState = BtnStates.map;
-                        calledInLastSeconds = false;
                     }, TIMEOUT);
                 } else {
                     btnState = BtnStates.map;
-                    setTimeout(() => {
-                        calledInLastSeconds = false;
-                    }, TIMEOUT);
                 }
             }
         }
@@ -178,6 +173,8 @@ namespace CzechGuessr.Game {
                 MAP.hide();
                 $("#btn").html("<i class=\"bi bi-map\"></i>");
                 if (mode === Modes.mobile) {
+                    $("#map").width("4rem");
+                    $("#map").height("4rem");
                     btnState = BtnStates.none;
                     setTimeout(() => {
                         btnState = BtnStates.closed;
