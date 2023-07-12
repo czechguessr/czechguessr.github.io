@@ -108,8 +108,8 @@ var CzechGuessr;
                 var round = rounds_1[_i];
                 var dist = distances[i];
                 var content = "".concat(dist > 1000 ? Math.round(dist / 10) / 100 : dist, " ").concat(dist > 1000 ? "km" : "m");
-                L.marker(round[0], { icon: greenIcon }).addTo(resMAP).bindPopup("<div style=\"text-align: center;\"><b style=\"color: green;\">Spr\u00E1vn\u011B</b><br>".concat(content, " od Va\u0161\u00ED odpov\u011Bdi</div>"));
-                L.marker(round[1]).addTo(resMAP).bindPopup("<div style=\"text-align: center;\"><b style=\"text-align: center; color: ".concat(dist > 10 ? "red" : "green", ";\">Va\u0161e odpov\u011B\u010F</b><br>").concat(content, " od spr\u00E1vn\u00E9 odpov\u011Bdi</div>"));
+                L.marker(round[0], { icon: greenIcon }).addTo(resMAP).bindPopup("<div style=\"text-align: center;\"><b style=\"color: green;\">Correct</b><br>".concat(content, " from your answer</div>"));
+                L.marker(round[1]).addTo(resMAP).bindPopup("<div style=\"text-align: center;\"><b style=\"text-align: center; color: ".concat(dist > 10 ? "red" : "green", ";\">Your answer</b><br>").concat(content, " from the correct answer</div>"));
                 L.polyline(round).addTo(resMAP).bindPopup(content);
                 points.push.apply(points, round);
                 i++;
@@ -260,8 +260,14 @@ var CzechGuessr;
             function onBtnHover() {
                 if (btnState === BtnStates.closed) {
                     MAP.show();
-                    $("#map").width("");
-                    $("#map").height("");
+                    if (mode === Modes.mobile) {
+                        $("#map").width("80%");
+                        $("#map").height("80%");
+                    }
+                    else {
+                        $("#map").width("");
+                        $("#map").height("");
+                    }
                     if (LMAP === undefined) {
                         LMAP = L.map(MAP[0]).setView(CGMAP.center, CGMAP.centerZoom);
                         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {

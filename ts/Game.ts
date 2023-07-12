@@ -59,8 +59,8 @@ namespace CzechGuessr.Game {
         for (const round of rounds) {
             let dist = distances[i];
             let content = `${dist > 1000 ? Math.round(dist / 10) / 100 : dist} ${dist > 1000 ? "km" : "m"}`
-            L.marker(round[0], { icon: greenIcon }).addTo(resMAP).bindPopup(`<div style="text-align: center;"><b style="color: green;">Správně</b><br>${content} od Vaší odpovědi</div>`);
-            L.marker(round[1]).addTo(resMAP).bindPopup(`<div style="text-align: center;"><b style="text-align: center; color: ${dist > 10 ? "red" : "green"};">Vaše odpověď</b><br>${content} od správné odpovědi</div>`);
+            L.marker(round[0], { icon: greenIcon }).addTo(resMAP).bindPopup(`<div style="text-align: center;"><b style="color: green;">Correct</b><br>${content} from your answer</div>`);
+            L.marker(round[1]).addTo(resMAP).bindPopup(`<div style="text-align: center;"><b style="text-align: center; color: ${dist > 10 ? "red" : "green"};">Your answer</b><br>${content} from the correct answer</div>`);
             L.polyline(round).addTo(resMAP).bindPopup(content);
             points.push(...round);
             i++;
@@ -194,8 +194,13 @@ namespace CzechGuessr.Game {
         export function onBtnHover() {
             if (btnState === BtnStates.closed) {
                 MAP.show();
-                $("#map").width("");
-                $("#map").height("");
+                if (mode === Modes.mobile) {
+                    $("#map").width("80%");
+                    $("#map").height("80%");
+                } else {
+                    $("#map").width("");
+                    $("#map").height("");
+                }
                 if (LMAP === undefined) {
                     LMAP = L.map(MAP[0]).setView(CGMAP.center, CGMAP.centerZoom);
                     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
