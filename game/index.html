@@ -29,14 +29,14 @@
 
 <body>
     <div id="results">
-        <h1>Results:</h1>
-        <span id="avg-err"></span><br>
-        <span id="total-err"></span><br>
-        <span id="round-count"></span>
+        <div id="resMap"></div>
     </div>
     <div id="pano" onclick="CzechGuessr.Game.Events.onMapHoverOut(true);"></div>
-    <div id="end" onclick="CzechGuessr.Game.end()">
-        <i class="bi bi-x-square-fill text-danger"></i>
+    <div id="end" onclick="CzechGuessr.Game.end();">
+        <i class="bi bi-x-square-fill"></i>
+    </div>
+    <div id="fs" onclick="CzechGuessr.Game.Events.onFullscreenRequest();">
+        <i class="bi bi-fullscreen"></i>
     </div>
     <div id="map" onmouseleave="CzechGuessr.Game.Events.onMapHoverOut();">
         <div id="btn" onclick="CzechGuessr.Game.Events.onBtnClick()"

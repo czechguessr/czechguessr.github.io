@@ -48,7 +48,8 @@ var CzechGuessr;
         var TARGET;
         var DIST_POPUP;
         var currentLocation;
-        var errors = [];
+        var distances = [];
+        var rounds = [];
         var greenIcon = new L.Icon({
             iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
             shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
@@ -87,17 +88,33 @@ var CzechGuessr;
             loadLocation(currentLocation);
         }
         Game.update = update;
+        Game.popups = [];
         function end() {
+            document.exitFullscreen().catch(function () { });
             MAP.hide();
             $("#end").hide();
+            $("#fs").hide();
             $("#pano").hide();
             $("#btn").hide();
-            var sum = Math.round((errors.reduce(function (a, b) { return a + b; })) * 10) / 10;
-            var mean = Math.round((sum / errors.length) * 10) / 10;
-            $("#avg-err").text("Avg. error: ".concat(mean > 1000 ? Math.round(mean / 10) / 100 : mean, " ").concat(mean > 1000 ? "km" : "m"));
-            $("#total-err").text("Total error: ".concat(sum > 1000 ? Math.round(sum / 10) / 100 : sum, "  ").concat(sum > 1000 ? "km" : "m"));
-            $("#round-count").text("Rounds played: ".concat(errors.length));
             $("#results").show();
+            var resMAP = L.map($("#resMap")[0]).setView(CGMAP.center, CGMAP.centerZoom);
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(resMAP);
+            var points = [];
+            var i = 0;
+            for (var _i = 0, rounds_1 = rounds; _i < rounds_1.length; _i++) {
+                var round = rounds_1[_i];
+                var dist = distances[i];
+                var content = "".concat(dist > 1000 ? Math.round(dist / 10) / 100 : dist, " ").concat(dist > 1000 ? "km" : "m");
+                L.marker(round[0], { icon: greenIcon }).addTo(resMAP).bindPopup("<div style=\"text-align: center;\"><b style=\"color: green;\">Spr\u00E1vn\u011B</b><br>".concat(content, " od Va\u0161\u00ED odpov\u011Bdi</div>"));
+                L.marker(round[1]).addTo(resMAP).bindPopup("<div style=\"text-align: center;\"><b style=\"text-align: center; color: ".concat(dist > 10 ? "red" : "green", ";\">Va\u0161e odpov\u011B\u010F</b><br>").concat(content, " od spr\u00E1vn\u00E9 odpov\u011Bdi</div>"));
+                L.polyline(round).addTo(resMAP).bindPopup(content);
+                points.push.apply(points, round);
+                i++;
+            }
+            resMAP.fitBounds(L.latLngBounds(points).pad(0.25));
         }
         Game.end = end;
         function next() {
@@ -133,13 +150,42 @@ var CzechGuessr;
                 Modes[Modes["PC"] = 0] = "PC";
                 Modes[Modes["mobile"] = 1] = "mobile";
             })(Modes || (Modes = {}));
+            var ScreenStates;
+            (function (ScreenStates) {
+                ScreenStates[ScreenStates["normal"] = 0] = "normal";
+                ScreenStates[ScreenStates["fs"] = 1] = "fs";
+            })(ScreenStates || (ScreenStates = {}));
             var btnState = BtnStates.closed;
             var markerState = MarkerStates.hidden;
             var mode;
-            if (typeof screen.orientation === 'undefined')
-                mode = Modes.PC;
-            else
+            if (navigator.userAgent.match(/Android/i)
+                || navigator.userAgent.match(/webOS/i)
+                || navigator.userAgent.match(/iPhone/i)
+                || navigator.userAgent.match(/iPad/i)
+                || navigator.userAgent.match(/iPod/i)
+                || navigator.userAgent.match(/BlackBerry/i)
+                || navigator.userAgent.match(/Windows Phone/i))
                 mode = Modes.mobile;
+            else
+                mode = Modes.PC;
+            var screenState = ScreenStates.normal;
+            function onFullscreenRequest() {
+                var origPlace = PANO.getPlace().getCoords();
+                if (screenState === ScreenStates.normal) {
+                    document.documentElement.requestFullscreen();
+                    screenState = ScreenStates.fs;
+                }
+                else {
+                    document.exitFullscreen();
+                    screenState = ScreenStates.normal;
+                }
+                $("#pano")[0].innerHTML = "";
+                setTimeout(function () {
+                    PANO = new SMap.Pano.Scene($("#pano")[0]);
+                    loadLocation({ lat: origPlace.toWGS84()[1], lon: origPlace.toWGS84()[0] });
+                }, TIMEOUT);
+            }
+            Events.onFullscreenRequest = onFullscreenRequest;
             function onMapClick(e) {
                 if (markerState === MarkerStates.hidden) {
                     MARKER.addTo(LMAP);
@@ -151,14 +197,23 @@ var CzechGuessr;
             function onBtnClick() {
                 onBtnHover();
                 if (btnState === BtnStates.map) {
+                    if (mode === Modes.mobile) {
+                        $("#map").width("80%");
+                        $("#map").height("80%");
+                    }
+                    else {
+                        $("#map").width("50%");
+                        $("#map").height("50%");
+                    }
                     var dist = Math.round(SMap.Coords.fromWGS84(MARKER.getLatLng().lng, MARKER.getLatLng().lat).distance(SMap.Coords.fromWGS84(currentLocation.lon, currentLocation.lat)) * 10) / 10;
                     LMAP.removeEventListener('click');
-                    errors.push(dist);
+                    distances.push(dist);
                     DIST_POPUP = L.popup({ closeButton: false, closeOnClick: false, closeOnEscapeKey: false, autoClose: false })
-                        .setLatLng([(MARKER.getLatLng().lat + currentLocation.lat) / 2, (MARKER.getLatLng().lng + currentLocation.lon) / 2])
+                        .setLatLng(L.latLngBounds([MARKER.getLatLng(), L.latLng(currentLocation.lat, currentLocation.lon)]).getCenter())
                         .setContent("".concat(dist > 1000 ? Math.round(dist / 10) / 100 : dist, " ").concat(dist > 1000 ? "km" : "m"))
                         .openOn(LMAP);
-                    var points = [[currentLocation.lat, currentLocation.lon], MARKER.getLatLng()];
+                    var points = [L.latLng(currentLocation.lat, currentLocation.lon), MARKER.getLatLng()];
+                    rounds.push(points);
                     TMARKER.setLatLng(points[0]);
                     TMARKER.addTo(LMAP);
                     if (TARGET === undefined)
@@ -205,10 +260,8 @@ var CzechGuessr;
             function onBtnHover() {
                 if (btnState === BtnStates.closed) {
                     MAP.show();
-                    if (mode === Modes.mobile) {
-                        $("#map").width("80%");
-                        $("#map").height("80%");
-                    }
+                    $("#map").width("");
+                    $("#map").height("");
                     if (LMAP === undefined) {
                         LMAP = L.map(MAP[0]).setView(CGMAP.center, CGMAP.centerZoom);
                         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -233,11 +286,11 @@ var CzechGuessr;
             function onMapHoverOut(force) {
                 if (force === void 0) { force = false; }
                 if (btnState === BtnStates.map && (mode === Modes.PC || force)) {
+                    $("#map").width("4rem");
+                    $("#map").height("4rem");
                     MAP.hide();
                     $("#btn").html("<i class=\"bi bi-map\"></i>");
                     if (mode === Modes.mobile) {
-                        $("#map").width("4rem");
-                        $("#map").height("4rem");
                         btnState = BtnStates.none;
                         setTimeout(function () {
                             btnState = BtnStates.closed;

@@ -55,12 +55,26 @@ body {
 }
 
 #results {
-    text-align: center;
     width: 100%;
+    height: 100%;
 }
 
 #end {
+    color: #dc3545;
     position: absolute;
     right: 5px;
     top: 0;
+}
+
+#fs {
+    color: #ffc107;
+    max-height: 20px;
+    position: absolute;
+    left: 5px;
+    top: 0;
+}
+
+#resMap {
+    height: 100%;
+    width: 100%;
 }
