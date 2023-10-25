@@ -17,17 +17,17 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
-    <link rel="stylesheet" href="/style/main.css">
-    <link rel="stylesheet" href="/style/game.css">
+    <link rel="stylesheet" href="../style/main.css">
+    <link rel="stylesheet" href="../style/game.css">
 
-    <script src="/script/Game.js"></script>
-    <script src="/script/Map.js"></script>
-    <script src="/script/GLOBAL.js"></script>
+    <script src="../script/Game.js"></script>
+    <script src="../script/Map.js"></script>
+    <script src="../script/GLOBAL.js"></script>
 
     <title>CzechGuessr - Game</title>
 </head>
 
-<body>
+<body onload="CzechGuessr.Game.load();">
     <div id="results">
         <div id="resMap"></div>
     </div>
@@ -45,9 +45,6 @@
         </div>
         <div id="mapContainer"></div>
     </div>
-    <script type="module">
-        await CzechGuessr.Game.load();
-    </script>
 </body>
 
 </html>

@@ -21,7 +21,7 @@ namespace CzechGuessr.Game {
 
     export async function load() {
         $("#results").hide();
-        CGMAP = await CGMap.Map.fromUrl(localStorage.getItem(GLOBAL.MAP_KEY) as string);
+        CGMAP = CGMap.Map.fromJSON(JSON.parse(sessionStorage.getItem(GLOBAL.MAP_KEY) as string), sessionStorage.getItem(GLOBAL.MAP_PATH_KEY) as string);
         MAP = $("#mapContainer");
         MAP.hide();
         PANO = new SMap.Pano.Scene($("#pano")[0]);
@@ -79,7 +79,7 @@ namespace CzechGuessr.Game {
         update();
     }
     export namespace Events {
-        const TIMEOUT = 100;
+        const TIMEOUT = 500;
         enum BtnStates {
             closed,
             map,
@@ -136,13 +136,8 @@ namespace CzechGuessr.Game {
         export function onBtnClick() {
             onBtnHover();
             if (btnState === BtnStates.map) {
-                if (mode === Modes.mobile) {
-                    $("#map").width("80%");
-                    $("#map").height("80%");
-                } else {
-                    $("#map").width("50%");
-                    $("#map").height("50%");
-                }
+                $("#map").width("80%");
+                $("#map").height("80%");
                 let dist = Math.round(SMap.Coords.fromWGS84(MARKER.getLatLng().lng, MARKER.getLatLng().lat).distance(SMap.Coords.fromWGS84(currentLocation.lon, currentLocation.lat)) * 10) / 10;
                 LMAP.removeEventListener('click');
                 distances.push(dist);

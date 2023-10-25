@@ -38,10 +38,14 @@ namespace CzechGuessr.CGMap {
         public centerZoom: number = 13;
 
         public static async fromUrl(url: string) {
-            let map = new Map();
-            map.path = url;
             let json = await $.getJSON(url);
-            if (json.version !== GLOBAL.FILE_VERSION) throw new Error(`File version incorrect: ${url} has version ${json.version}, but the current FILE_VERSION is ${GLOBAL.FILE_VERSION}`)
+            return Map.fromJSON(json, url);
+        }
+
+        public static fromJSON(json: any, path: string) {
+            let map = new Map();
+            map.path = path;
+            if (json.version !== GLOBAL.FILE_VERSION) throw new Error(`File version incorrect: ${path} has version ${json.version}, but the current FILE_VERSION is ${GLOBAL.FILE_VERSION}`)
             map.name = json.name;
             map.author = json.author;
             map.center = [json.center[0], json.center[1]];
@@ -68,7 +72,7 @@ namespace CzechGuessr.CGMap {
     }
 
     export namespace Location {
-        export let toSeznamLocation = (CGloc: Location) => {
+        export function toSeznamLocation(CGloc: Location) {
             return SMap.Coords.fromWGS84(CGloc.lon, CGloc.lat);
         }
     }

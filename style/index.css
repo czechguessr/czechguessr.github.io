@@ -4,6 +4,6 @@
 
 .play-btn {
     position: fixed;
-    bottom: 1rem;
-    right: 1rem;
+    bottom: 5px;
+    right: 5px;
 }

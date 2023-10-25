@@ -1,7 +1,6 @@
 namespace CzechGuessr.SelectMap {
     let wrongPaths: string[] = [];
     let okPaths = new Map<string, CGMap.Config>();
-    let maps = new Map<string, CGMap.Map>();
 
     let FOLDER_PATH: JQuery<HTMLElement>;
 
@@ -24,14 +23,12 @@ namespace CzechGuessr.SelectMap {
     }
 
     function showMaps(CGConf: CGMap.Config) {
-        maps = new Map<string, CGMap.Map>();
         STATUS.html(STATUS_OK);
         STATUS.removeClass("text-danger");
         STATUS.addClass("text-success");
         MAP_SELECT.removeAttr("disabled");
         PLAY_BUTTON.removeAttr("disabled");
         CGConf.maps.forEach(map => {
-            maps.set(map.path, map);
             MAP_SELECT.append(`<option value="${map.path}">${map.name} by ${map.author}</option>`);
         });
     }
@@ -59,8 +56,6 @@ namespace CzechGuessr.SelectMap {
             let config = await CGMap.Config.fromDir(root);
 
             if (config.maps.length === 0) {
-                console.log("no maps");
-
                 wrongPath(root);
                 return;
             }
@@ -77,11 +72,20 @@ namespace CzechGuessr.SelectMap {
     export function ok() {
         let mapPath = MAP_SELECT.val();
         if (typeof mapPath !== "string") return;
+        sessionStorage.setItem(GLOBAL.MAP_PATH_KEY, mapPath);
+        $.getJSON(mapPath).then(data => {
+            sessionStorage.setItem(GLOBAL.MAP_KEY, JSON.stringify(data));
+            window.location.href = "../game";
+        })
+    }
 
-        let map = maps.get(mapPath);
-        if (map == undefined) return;
-
-        localStorage.setItem(GLOBAL.MAP_KEY, mapPath);
-        window.location.href = "/game";
+    export function fileSelected() {
+        let files = ($("#map-file")[0] as HTMLInputElement).files;
+        if (!files) return;
+        sessionStorage.setItem(GLOBAL.MAP_PATH_KEY, files[0].name);
+        files[0].text().then(value => {
+            sessionStorage.setItem(GLOBAL.MAP_KEY, JSON.stringify(JSON.parse(value)));
+            window.location.href = "../game";
+        });
     }
 }
